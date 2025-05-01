@@ -85,11 +85,13 @@ export function setupEventListeners(agent) {
     elements.micBtn.addEventListener('click', async () => {
         try {
             await ensureAgentReady(agent);
-            await agent.toggleMic();
-            elements.micBtn.classList.toggle('active');
+            const isActive = await agent.toggleMic();
+            elements.micBtn.classList.toggle('active', isActive);
+            elements.micBtn.classList.toggle('pulsing', isActive);
         } catch (error) {
             console.error('Error toggling microphone:', error);
-            elements.micBtn.classList.remove('active');
+            // Ensure button state is reset on error (e.g., permission denied)
+            elements.micBtn.classList.remove('active', 'pulsing');
         }
     });
     // Add touchstart listener for mic
@@ -112,15 +114,16 @@ export function setupEventListeners(agent) {
 
             if (!isCameraActive) {
                 await agent.startCameraCapture();
-                elements.cameraBtn.classList.add('active');
+                elements.cameraBtn.classList.add('active', 'glowing');
             } else {
                 await agent.stopCameraCapture();
-                elements.cameraBtn.classList.remove('active');
+                elements.cameraBtn.classList.remove('active', 'glowing');
             }
             isCameraActive = !isCameraActive;
         } catch (error) {
             console.error('Error toggling camera:', error);
-            elements.cameraBtn.classList.remove('active');
+            elements.cameraBtn.classList.remove('active', 'glowing');
+            isCameraActive = false;
             isCameraActive = false;
         }
     });
@@ -151,7 +154,7 @@ export function setupEventListeners(agent) {
 
     // Listen for screen share stopped events (from native browser controls)
     agent.on('screenshare_stopped', () => {
-        elements.screenBtn.classList.remove('active');
+        elements.screenBtn.classList.remove('active', 'glowing'); // Remove glowing class
         isScreenShareActive = false;
         console.info('Screen share stopped');
     });
@@ -162,15 +165,16 @@ export function setupEventListeners(agent) {
 
             if (!isScreenShareActive) {
                 await agent.startScreenShare();
-                elements.screenBtn.classList.add('active');
+                elements.screenBtn.classList.add('active', 'glowing');
             } else {
                 await agent.stopScreenShare();
-                elements.screenBtn.classList.remove('active');
+                elements.screenBtn.classList.remove('active', 'glowing');
             }
             isScreenShareActive = !isScreenShareActive;
         } catch (error) {
             console.error('Error toggling screen share:', error);
-            elements.screenBtn.classList.remove('active');
+            elements.screenBtn.classList.remove('active', 'glowing');
+            isScreenShareActive = false;
             isScreenShareActive = false;
         }
     });

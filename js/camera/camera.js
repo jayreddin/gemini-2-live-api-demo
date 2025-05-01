@@ -52,8 +52,10 @@ export class CameraManager {
         if (!/Mobi|Android/i.test(navigator.userAgent)) return;
 
         this.switchButton = document.createElement('button');
+        this.switchButton.id = 'camera-switch-btn'; // Add ID for consistency if needed
         this.switchButton.className = 'camera-switch-btn';
-        this.switchButton.innerHTML = '⟲';
+        this.switchButton.title = 'Switch Camera'; // Add title attribute
+        this.switchButton.innerHTML = '🔄'; // Use requested icon
         this.switchButton.addEventListener('click', () => this.switchCamera());
         this.previewContainer.appendChild(this.switchButton);
     }
@@ -122,16 +124,22 @@ export class CameraManager {
             this.videoElement = document.createElement('video');
             this.videoElement.srcObject = this.stream;
             this.videoElement.playsInline = true;
-            
-            // Add video to preview container
-            const previewContainer = document.getElementById('cameraPreview');
-            if (previewContainer) {
-                previewContainer.appendChild(this.videoElement);
-                this.previewContainer = previewContainer;
-                this._createSwitchButton(); // Add switch button
-                this.showPreview(); // Show preview when initialized
+
+            // Create or find preview container
+            let previewContainer = document.getElementById('camera-preview');
+            if (!previewContainer) {
+                previewContainer = document.createElement('div');
+                previewContainer.id = 'camera-preview';
+                previewContainer.className = 'camera-preview';
+                // Append to body or a more specific container if available
+                document.body.appendChild(previewContainer);
             }
-            
+            previewContainer.innerHTML = ''; // Clear previous content if any
+            previewContainer.appendChild(this.videoElement);
+            this.previewContainer = previewContainer;
+            this._createSwitchButton(); // Add switch button
+            this.showPreview(); // Show preview when initialized
+
             await this.videoElement.play();
 
             // Get the actual video dimensions
