@@ -16,47 +16,67 @@ export class CameraManager {
         };
         
         this.stream = null;
-        this.videoElement = null;
+        this.videoElement = null; // Will be the video element inside the popup
         this.canvas = null;
         this.ctx = null;
         this.isInitialized = false;
         this.aspectRatio = null;
-        this.previewContainer = null;
-        this.switchButton = null;
+        this.popupElement = document.getElementById('cameraPopup');
+        this.videoElement = document.getElementById('cameraPopupVideo');
+        this.switchButton = document.getElementById('switchCameraBtn');
+        this.closeButton = this.popupElement?.querySelector('.popup-close-btn');
+        this.onCloseCallback = null; // Callback when popup is closed
     }
 
     /**
-     * Show the camera preview
+     * Set a callback function to be called when the popup is closed.
+     * @param {Function} callback
+     */
+    setOnClose(callback) {
+        this.onCloseCallback = callback;
+    }
+
+    /**
+     * Show the camera popup
      */
     showPreview() {
-        if (this.previewContainer) {
-            this.previewContainer.style.display = 'block';
+        if (this.popupElement) {
+            this.popupElement.classList.add('show');
+            // Add draggable/resizable logic initialization here if needed
         }
     }
 
     /**
-     * Hide the camera preview
+     * Hide the camera popup
      */
     hidePreview() {
-        if (this.previewContainer) {
-            this.previewContainer.style.display = 'none';
+        if (this.popupElement) {
+            this.popupElement.classList.remove('show');
+             // Add draggable/resizable logic cleanup here if needed
         }
     }
 
-    /**
-     * Create and append the camera switch button
-     * @private
-     */
-    _createSwitchButton() {
-        // Only create button on mobile devices
-        if (!/Mobi|Android/i.test(navigator.userAgent)) return;
+     /**
+      * Check for multiple cameras and show/hide the switch button.
+      * @private
+      */
+     async _updateSwitchButtonVisibility() {
+         if (!this.switchButton) return;
 
-        this.switchButton = document.createElement('button');
-        this.switchButton.className = 'camera-switch-btn';
-        this.switchButton.innerHTML = '⟲';
-        this.switchButton.addEventListener('click', () => this.switchCamera());
-        this.previewContainer.appendChild(this.switchButton);
-    }
+         try {
+             const devices = await navigator.mediaDevices.enumerateDevices();
+             const videoInputDevices = devices.filter(device => device.kind === 'videoinput');
+             if (videoInputDevices.length > 1) {
+                 this.switchButton.style.display = 'flex'; // Use flex as it's an icon-btn
+             } else {
+                 this.switchButton.style.display = 'none';
+             }
+         } catch (error) {
+             console.error("Error enumerating devices:", error);
+             this.switchButton.style.display = 'none'; // Hide on error
+         }
+     }
+
 
     /**
      * Switch between front and back cameras
@@ -64,10 +84,11 @@ export class CameraManager {
     async switchCamera() {
         if (!this.isInitialized) return;
         
-        // Toggle facingMode
-        this.config.facingMode = this.config.facingMode === 'user' ? 'environment' : 'user';
-        localStorage.setItem('facingMode', this.config.facingMode);
-        
+        // Toggle facingMode preference
+        const newFacingMode = this.config.facingMode === 'user' ? 'environment' : 'user';
+        console.log(`Attempting to switch camera to: ${newFacingMode}`);
+        // Don't save to localStorage here, save only if successful
+
         // Stop current stream
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
@@ -79,17 +100,38 @@ export class CameraManager {
                 video: {
                     width: { ideal: 1920 },
                     height: { ideal: 1080 },
-                    facingMode: this.config.facingMode
+                    facingMode: { exact: newFacingMode } // Use exact to force the switch
                 }
             };
 
             this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.videoElement.srcObject = this.stream;
             await this.videoElement.play();
+
+            // If successful, update and save the new facing mode
+            this.config.facingMode = newFacingMode;
+            localStorage.setItem('facingMode', this.config.facingMode);
+            console.log(`Successfully switched camera to: ${this.config.facingMode}`);
+
         } catch (error) {
-            console.error('Failed to switch camera:', error);
-            // Revert to previous facing mode on error
-            this.config.facingMode = localStorage.getItem('facingMode') || 'environment';
+            console.error(`Failed to switch camera to ${newFacingMode}:`, error);
+            // Attempt to fall back to the *other* mode if exact fails
+            const fallbackFacingMode = newFacingMode === 'user' ? 'environment' : 'user';
+            console.log(`Falling back to: ${fallbackFacingMode}`);
+            try {
+                 constraints.video.facingMode = { exact: fallbackFacingMode };
+                 this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                 this.videoElement.srcObject = this.stream;
+                 await this.videoElement.play();
+                 this.config.facingMode = fallbackFacingMode;
+                 localStorage.setItem('facingMode', this.config.facingMode);
+                 console.log(`Successfully switched camera using fallback: ${this.config.facingMode}`);
+            } catch (fallbackError) {
+                 console.error(`Fallback camera switch also failed:`, fallbackError);
+                 // Keep the old stream running if possible, or handle error state
+                 // Re-fetch the stream with the original facing mode if necessary
+                 await this.initializeStream(this.config.facingMode); // Re-initialize with original mode
+            }
         }
     }
 
@@ -97,42 +139,68 @@ export class CameraManager {
      * Initialize camera stream and canvas
      * @returns {Promise<void>}
      */
+    /**
+     * Initializes the camera stream with a specific facing mode.
+     * @param {string} facingMode - 'user' or 'environment'
+     * @private
+     */
+    async initializeStream(facingMode) {
+         // Stop existing stream if any
+         if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+         }
+
+         const constraints = {
+             video: {
+                 width: { ideal: 1920 },
+                 height: { ideal: 1080 }
+             }
+         };
+         if (facingMode) {
+             constraints.video.facingMode = facingMode;
+         }
+
+         this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+         this.videoElement.srcObject = this.stream;
+         await this.videoElement.play();
+    }
+
+
+    /**
+     * Initialize camera stream, popup, and canvas
+     * @returns {Promise<void>}
+     */
     async initialize() {
-        if (this.isInitialized) return;
+        if (this.isInitialized || !this.popupElement || !this.videoElement) return;
 
         try {
-            // Build constraints based on platform
-            const constraints = {
-                video: {
-                    width: { ideal: 1920 }, // Request max quality first
-                    height: { ideal: 1080 }
-                }
-            };
-
-            // Set initial facingMode on mobile
+            // Determine initial facing mode
+            let initialFacingMode = null;
             if (/Mobi|Android/i.test(navigator.userAgent)) {
-                this.config.facingMode = this.config.facingMode || 'user'; // Default to front camera
-                constraints.video.facingMode = this.config.facingMode;
+                 initialFacingMode = localStorage.getItem('facingMode') || 'user'; // Load preference or default to front
+                 this.config.facingMode = initialFacingMode;
             }
 
-            // Request camera access
-            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            // Request camera access and start stream
+            await this.initializeStream(initialFacingMode);
 
-            // Create and setup video element
-            this.videoElement = document.createElement('video');
-            this.videoElement.srcObject = this.stream;
-            this.videoElement.playsInline = true;
-            
-            // Add video to preview container
-            const previewContainer = document.getElementById('cameraPreview');
-            if (previewContainer) {
-                previewContainer.appendChild(this.videoElement);
-                this.previewContainer = previewContainer;
-                this._createSwitchButton(); // Add switch button
-                this.showPreview(); // Show preview when initialized
+            // Setup popup elements and listeners
+            if (this.switchButton) {
+                this.switchButton.onclick = () => this.switchCamera(); // Use onclick for simplicity or manage listeners
+                await this._updateSwitchButtonVisibility(); // Check if switch button should be visible
             }
-            
-            await this.videoElement.play();
+            if (this.closeButton) {
+                 this.closeButton.onclick = () => this.dispose(); // Close button triggers dispose
+            }
+
+            // Add listener for click-outside dismissal (implementation might be external)
+            // this._setupClickOutsideListener();
+
+            // Add draggable/resizable listeners (implementation might be external)
+            // this._setupDraggableResizable();
+
+            this.showPreview(); // Show the popup
 
             // Get the actual video dimensions
             const videoWidth = this.videoElement.videoWidth;
@@ -193,31 +261,54 @@ export class CameraManager {
     /**
      * Stop camera stream and cleanup resources
      */
+    /**
+     * Stop camera stream and cleanup resources, hiding the popup.
+     */
     dispose() {
+        console.log("Disposing CameraManager...");
+        if (!this.isInitialized && !this.stream) return; // Avoid disposing multiple times or if not initialized
+
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
+            console.log("Camera stream stopped.");
         }
-        
+
         if (this.videoElement) {
             this.videoElement.srcObject = null;
-            this.videoElement = null;
+            this.videoElement.pause(); // Explicitly pause
+            this.videoElement.removeAttribute('src'); // Remove src attribute
+            // Note: We don't remove the videoElement itself as it's part of the static HTML popup
         }
 
+        // Remove listeners if they were added directly
         if (this.switchButton) {
-            this.switchButton.remove();
-            this.switchButton = null;
+            this.switchButton.onclick = null;
+            this.switchButton.style.display = 'none'; // Hide it
+        }
+        if (this.closeButton) {
+            this.closeButton.onclick = null;
         }
 
-        if (this.previewContainer) {
-            this.hidePreview();
-            this.previewContainer.innerHTML = ''; // Clear the preview container
-            this.previewContainer = null;
-        }
+        // Clean up draggable/resizable listeners if added
+        // this._cleanupDraggableResizable();
+        // this._cleanupClickOutsideListener();
+
+        this.hidePreview(); // Hide the popup
 
         this.canvas = null;
         this.ctx = null;
         this.isInitialized = false;
         this.aspectRatio = null;
+
+        // Trigger the close callback if it exists
+        if (this.onCloseCallback) {
+            try {
+                this.onCloseCallback();
+            } catch (error) {
+                console.error("Error in onCloseCallback:", error);
+            }
+        }
+        console.log("CameraManager disposed.");
     }
 }

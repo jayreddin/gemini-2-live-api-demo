@@ -1,5 +1,6 @@
 import elements from './elements.js';
 import settingsManager from '../settings/settings-manager.js';
+import { makeDraggable, makeResizable } from '../utils/utils.js'; // Import utilities
 
 /**
  * Updates UI to show disconnect button and hide connect button
@@ -17,7 +18,7 @@ const showConnectButton = () => {
     elements.connectBtn.style.display = 'block';
 };
 
-let isCameraActive = false;
+// State variables moved inside setupEventListeners or managed by managers
 
 /**
  * Ensures the agent is connected and initialized
@@ -37,15 +38,111 @@ const ensureAgentReady = async (agent) => {
 /**
  * Sets up event listeners for the application's UI elements
  * @param {GeminiAgent} agent - The main application agent instance
+ * @param {CameraManager} cameraManager - Instance of CameraManager
+ * @param {ScreenManager} screenManager - Instance of ScreenManager
  */
-export function setupEventListeners(agent) {
+export function setupEventListeners(agent, cameraManager, screenManager) {
+
+    let isMicActive = false; // Track mic state based on agent events if possible, or toggle
+    let isCameraActive = false; // Track if camera manager is active
+    let isScreenShareActive = false; // Track if screen manager is active
+
+    // Store cleanup functions for draggable/resizable listeners
+    let cameraDragCleanup = null;
+    let cameraResizeCleanup = null;
+    let screenDragCleanup = null;
+    let screenResizeCleanup = null;
+
+    // --- Helper to reset button state ---
+    const resetButtonState = (button, stateVariable) => {
+        button.classList.remove('active');
+        stateVariable = false; // Note: This won't update the outer scope variable directly, manage state carefully
+    };
+
+    // --- Popup Dismissal Logic ---
+    const handleOutsideClick = (event) => {
+        // Check camera popup
+        if (isCameraActive && cameraManager.popupElement && !cameraManager.popupElement.contains(event.target) && !elements.cameraBtn.contains(event.target)) {
+            console.log("Clicked outside camera popup.");
+            cameraManager.dispose(); // This will trigger onCloseCallback
+        }
+        // Check screen popup
+        if (isScreenShareActive && screenManager.popupElement && !screenManager.popupElement.contains(event.target) && !elements.screenBtn.contains(event.target)) {
+            console.log("Clicked outside screen popup.");
+            screenManager.dispose(); // This will trigger onCloseCallback
+        }
+        // Add settings dialog check if needed
+    };
+    document.addEventListener('click', handleOutsideClick, true); // Use capture phase
+
+
+    // --- Draggable/Resizable Integration ---
+    const setupPopupInteraction = (manager, type) => {
+        if (manager.popupElement) {
+            const header = manager.popupElement.querySelector('.popup-header');
+            if (header) {
+                if (type === 'camera') {
+                    cleanupPopupInteraction('camera'); // Clean up previous listeners if any
+                    cameraDragCleanup = makeDraggable(manager.popupElement, header);
+                    cameraResizeCleanup = makeResizable(manager.popupElement); // Resizable via pinch
+                    console.log("Draggable/Resizable setup for Camera Popup");
+                } else if (type === 'screen') {
+                    cleanupPopupInteraction('screen'); // Clean up previous listeners if any
+                    screenDragCleanup = makeDraggable(manager.popupElement, header);
+                    screenResizeCleanup = makeResizable(manager.popupElement); // Resizable via pinch
+                    console.log("Draggable/Resizable setup for Screen Popup");
+                }
+            } else {
+                console.warn(`Popup header not found for ${type} popup.`);
+            }
+        } else {
+             console.warn(`Popup element not found for ${type} manager.`);
+        }
+    };
+
+    const cleanupPopupInteraction = (type) => {
+         if (type === 'camera') {
+             if (cameraDragCleanup) cameraDragCleanup();
+             if (cameraResizeCleanup) cameraResizeCleanup();
+             cameraDragCleanup = null;
+             cameraResizeCleanup = null;
+             console.log("Draggable/Resizable cleaned up for Camera Popup");
+         } else if (type === 'screen') {
+             if (screenDragCleanup) screenDragCleanup();
+             if (screenResizeCleanup) screenResizeCleanup();
+             screenDragCleanup = null;
+             screenResizeCleanup = null;
+             console.log("Draggable/Resizable cleaned up for Screen Popup");
+         }
+    };
+
+
+    // --- Button Event Listeners ---
+
     // Disconnect handler
     elements.disconnectBtn.addEventListener('click', async () => {
         try {
+            // Dispose managers and cleanup interactions before disconnecting agent
+            if (isCameraActive) {
+                cameraManager.dispose(); // Calls onClose which calls cleanupPopupInteraction
+            } else {
+                 cleanupPopupInteraction('camera'); // Ensure cleanup even if not active
+            }
+            if (isScreenShareActive) {
+                screenManager.dispose(); // Calls onClose which calls cleanupPopupInteraction
+            } else {
+                 cleanupPopupInteraction('screen'); // Ensure cleanup even if not active
+            }
+            // Mic state is handled by agent disconnect internally? Verify.
             await agent.disconnect();
             showConnectButton();
-            [elements.cameraBtn, elements.screenBtn, elements.micBtn].forEach(btn => btn.classList.remove('active'));
+            // Reset button states visually (state variables managed by callbacks)
+            elements.cameraBtn.classList.remove('active');
+            elements.screenBtn.classList.remove('active');
+            elements.micBtn.classList.remove('active'); // Assuming disconnect stops mic
             isCameraActive = false;
+            isScreenShareActive = false;
+            isMicActive = false; // Assuming disconnect stops mic
         } catch (error) {
             console.error('Error disconnecting:', error);
         }
@@ -64,60 +161,114 @@ export function setupEventListeners(agent) {
     elements.micBtn.addEventListener('click', async () => {
         try {
             await ensureAgentReady(agent);
+            // TODO: Verify agent.toggleMic() correctly manages internal state
+            // and potentially emits events to confirm state changes.
             await agent.toggleMic();
-            elements.micBtn.classList.toggle('active');
+            isMicActive = !isMicActive; // Tentatively toggle state
+            elements.micBtn.classList.toggle('active', isMicActive); // Update class based on assumed state
+            elements.micBtn.setAttribute('aria-pressed', isMicActive); // Update ARIA
+            console.log(`Mic toggled. Assumed active: ${isMicActive}`);
         } catch (error) {
             console.error('Error toggling microphone:', error);
+            // Reset state on error
+            isMicActive = false;
             elements.micBtn.classList.remove('active');
+            elements.micBtn.setAttribute('aria-pressed', 'false');
         }
     });
 
     // Camera toggle handler
+    // Camera toggle handler using CameraManager
+    cameraManager.setOnClose(() => {
+        console.log("CameraManager onCloseCallback triggered.");
+        elements.cameraBtn.classList.remove('active');
+        elements.cameraBtn.setAttribute('aria-pressed', 'false');
+        isCameraActive = false;
+        // Optionally notify the agent if needed
+        // agent.notifyCameraStopped();
+        cleanupPopupInteraction('camera'); // Clean up draggable/resizable listeners
+    });
+
     elements.cameraBtn.addEventListener('click', async () => {
-        try {
-            await ensureAgentReady(agent);
-            
-            if (!isCameraActive) {
-                await agent.startCameraCapture();
+        if (!isCameraActive) {
+            try {
+                await ensureAgentReady(agent);
+                await cameraManager.initialize();
+                // TODO: Integrate cameraManager.capture() with agent if needed
+                // Example: agent.setCameraSource(cameraManager);
                 elements.cameraBtn.classList.add('active');
-            } else {
-                await agent.stopCameraCapture();
+                elements.cameraBtn.setAttribute('aria-pressed', 'true');
+                isCameraActive = true;
+                console.log("Camera activated.");
+                setupPopupInteraction(cameraManager, 'camera'); // Setup draggable/resizable
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                cameraManager.dispose(); // Ensure cleanup on init error
                 elements.cameraBtn.classList.remove('active');
+                elements.cameraBtn.setAttribute('aria-pressed', 'false');
+                isCameraActive = false;
             }
-            isCameraActive = !isCameraActive;
-        } catch (error) {
-            console.error('Error toggling camera:', error);
-            elements.cameraBtn.classList.remove('active');
-            isCameraActive = false;
+        } else {
+            try {
+                cameraManager.dispose(); // Dispose handles stopping stream and hiding popup
+                // Callback handles button state update
+                console.log("Camera disposed via button click.");
+            } catch (error) {
+                 console.error('Error stopping camera:', error);
+                 // Force reset state even if dispose fails
+                 elements.cameraBtn.classList.remove('active');
+                 elements.cameraBtn.setAttribute('aria-pressed', 'false');
+                 isCameraActive = false;
+            }
         }
     });
 
-    // Screen sharing handler
-    let isScreenShareActive = false;
-    
-    // Listen for screen share stopped events (from native browser controls)
-    agent.on('screenshare_stopped', () => {
+    // Screen sharing handler using ScreenManager
+    screenManager.setOnClose(() => {
+        console.log("ScreenManager onCloseCallback triggered.");
         elements.screenBtn.classList.remove('active');
+        elements.screenBtn.setAttribute('aria-pressed', 'false');
         isScreenShareActive = false;
-        console.info('Screen share stopped');
+        // Optionally notify the agent if needed
+        // agent.notifyScreenShareStopped();
+        cleanupPopupInteraction('screen'); // Clean up draggable/resizable listeners
     });
 
     elements.screenBtn.addEventListener('click', async () => {
-        try {
-            await ensureAgentReady(agent);
-            
-            if (!isScreenShareActive) {
-                await agent.startScreenShare();
+        if (!isScreenShareActive) {
+            try {
+                await ensureAgentReady(agent);
+                await screenManager.initialize();
+                // TODO: Integrate screenManager.capture() with agent if needed
+                // Example: agent.setScreenSource(screenManager);
                 elements.screenBtn.classList.add('active');
-            } else {
-                await agent.stopScreenShare();
+                elements.screenBtn.setAttribute('aria-pressed', 'true');
+                isScreenShareActive = true;
+                console.log("Screen share activated.");
+                setupPopupInteraction(screenManager, 'screen'); // Setup draggable/resizable
+            } catch (error) {
+                console.error('Error starting screen share:', error);
+                // ScreenManager's initialize already calls dispose on error
                 elements.screenBtn.classList.remove('active');
+                elements.screenBtn.setAttribute('aria-pressed', 'false');
+                isScreenShareActive = false;
+                // Optionally show user feedback about potential iOS incompatibility
+                if (error.message.includes("getDisplayMedia")) {
+                     alert("Screen sharing might not be supported on this browser/device (e.g., iOS).");
+                }
             }
-            isScreenShareActive = !isScreenShareActive;
-        } catch (error) {
-            console.error('Error toggling screen share:', error);
-            elements.screenBtn.classList.remove('active');
-            isScreenShareActive = false;
+        } else {
+             try {
+                screenManager.dispose(); // Dispose handles stopping stream and hiding popup
+                // Callback handles button state update
+                console.log("Screen share disposed via button click.");
+             } catch (error) {
+                 console.error('Error stopping screen share:', error);
+                 // Force reset state
+                 elements.screenBtn.classList.remove('active');
+                 elements.screenBtn.setAttribute('aria-pressed', 'false');
+                 isScreenShareActive = false;
+             }
         }
     });
 
@@ -143,7 +294,10 @@ export function setupEventListeners(agent) {
 
     // Settings button click
     elements.settingsBtn.addEventListener('click', () => settingsManager.show());
+
+    // Initial UI state
+    showConnectButton(); // Assuming starts disconnected
 }
 
-// Initialize settings
-settingsManager;
+// Initialize settings (keep this if settingsManager needs early init)
+settingsManager.initialize();
