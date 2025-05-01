@@ -5,6 +5,8 @@
     --text-color: #ffffff;
     --accent-color: #4CAF50;
     --danger-color: #ff4444;
+    --header-bg: #333;
+    --button-banner-bg: #444;
 }
 
 * {
@@ -22,19 +24,20 @@ body {
     flex-direction: column;
 }
 
-.app-container {
-    position: relative;
-    width: 100%;
-    height: 100vh;
+.header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
+    padding: 10px;
+    background-color: var(--header-bg);
+    z-index: 1000;
 }
 
 .disconnect-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
     padding: 10px 20px;
     background-color: var(--button-bg);
     color: var(--danger-color);
@@ -51,9 +54,6 @@ body {
 }
 
 .connect-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
     padding: 10px 20px;
     background-color: var(--button-bg);
     color: var(--accent-color);
@@ -82,9 +82,6 @@ body {
     align-items: center;
     transition: all 0.3s ease;
     z-index: 2;
-    position: absolute;
-    bottom: 22px;
-    right: 25px;
 }
 
 .camera-btn,
@@ -101,16 +98,26 @@ body {
     align-items: center;
     transition: all 0.3s ease;
     z-index: 2;
-    position: absolute;
-    right: 25px;
 }
 
 .camera-btn {
-    bottom: 142px;
+    /* Position handled by button-banner */
 }
 
 .screen-btn {
-    bottom: 82px;
+    /* Position handled by button-banner */
+}
+
+/* Media query for devices with width less than 340px */
+@media (max-width: 340px) {
+    .camera-preview {
+        width: 180px;
+        right: 25px;
+    }
+    .screen-preview {
+        width: 180px;
+        height: 101px; /* Maintain 16:9 aspect ratio */
+    }
 }
 
 .camera-btn:hover,
@@ -154,12 +161,14 @@ body {
 
 .text-input-container {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 100px; /* Leave space for mic button */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
     display: flex;
     gap: 10px;
     z-index: 2;
+    background-color: var(--button-banner-bg); /* Match banner background */
 }
 
 .text-input {
@@ -167,7 +176,7 @@ body {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--accent-color);
-    background-color: var(--button-bg);
+    background-color: var(--bg-color); /* Use background color for input */
     color: var(--text-color);
     font-size: 16px;
     outline: none;
@@ -182,9 +191,9 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    background-color: var(--button-bg);
-    border: 1px solid var(--accent-color);
-    color: var(--accent-color);
+    background-color: var(--accent-color); /* Use accent color for send button */
+    border: none; /* Remove border */
+    color: var(--text-color);
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -199,19 +208,19 @@ body {
 
 .visualizer {
     position: absolute;
-    bottom: 0;
+    bottom: 60px; /* Adjust position to be above the button banner */
     left: 0;
     width: 100%;
-    height: 200px;
+    height: 100px; /* Reduce height */
     z-index: 1;
 }
 
 .camera-preview {
     position: absolute;
-    bottom: 100px;
-    left: 20px;
-    width: 240px; /* Default width */
-    height: 180px;
+    bottom: 110px; /* Adjust position */
+    left: 10px; /* Adjust position */
+    width: 160px; /* Reduce size for mobile */
+    height: 120px; /* Reduce size for mobile */
     background-color: var(--button-bg);
     border: 1px solid var(--accent-color);
     border-radius: 8px;
@@ -228,10 +237,10 @@ body {
 
 .screen-preview {
     position: absolute;
-    bottom: 300px;
-    left: 20px;
-    width: 240px;
-    height: 135px; /* 16:9 aspect ratio */
+    bottom: 240px; /* Adjust position */
+    left: 10px; /* Adjust position */
+    width: 160px; /* Reduce size for mobile */
+    height: 90px; /* Maintain 16:9 aspect ratio */
     background-color: var(--button-bg);
     border: 1px solid var(--accent-color);
     border-radius: 8px;
@@ -246,15 +255,98 @@ body {
     object-fit: contain; /* Maintain aspect ratio without cropping */
 }
 
-/* Media query for devices with width less than 340px */
-@media (max-width: 340px) {
-    .camera-preview {
-        width: 180px;
-        right: 25px;
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 60px; /* Space for header */
+        padding-bottom: 60px; /* Space for input */
     }
+
+    .header {
+        position: fixed; /* Keep header fixed */
+    }
+
+    .disconnect-btn,
+    .connect-btn,
+    .settings-btn {
+        position: static; /* Remove absolute positioning */
+    }
+
+    .chat-history {
+        position: static; /* Remove absolute positioning */
+        flex: 1; /* Allow chat history to grow */
+        width: 100%;
+        margin: 0; /* Remove margins */
+        border-radius: 0; /* Remove border radius */
+        padding: 10px;
+    }
+
+    .chat-message {
+        max-width: 95%; /* Increase max-width */
+    }
+
+    .user-message {
+        margin-left: 5%; /* Adjust margin */
+    }
+
+    .model-message {
+        margin-right: 5%; /* Adjust margin */
+    }
+
+    .button-banner {
+        position: fixed;
+        bottom: 60px; /* Position above input */
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        background-color: var(--button-banner-bg);
+        z-index: 2;
+        gap: 20px; /* Add gap between buttons */
+    }
+
+    .mic-btn,
+    .camera-btn,
+    .screen-btn {
+        position: static; /* Remove absolute positioning */
+        bottom: auto;
+        right: auto;
+    }
+
+    .text-input-container {
+        position: fixed; /* Keep input fixed */
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        background-color: var(--button-banner-bg); /* Match banner background */
+    }
+
+    .visualizer {
+        display: none; /* Hide visualizer on mobile */
+    }
+
+    .camera-preview,
     .screen-preview {
-        width: 180px;
-        height: 101px; /* Maintain 16:9 aspect ratio */
+        position: fixed; /* Keep previews fixed */
+        bottom: 120px; /* Position above button banner */
+        left: 10px;
+        width: 120px; /* Further reduce size */
+        height: 90px;
+    }
+
+    .screen-preview {
+        bottom: 220px; /* Adjust position */
+        height: 67.5px; /* Maintain 16:9 aspect ratio */
+    }
+
+    .settings-dialog {
+        width: 95%; /* Increase width */
+        padding: 15px; /* Reduce padding */
     }
 }
 
@@ -281,7 +373,7 @@ body {
     background: rgba(0, 0, 0, 0.7);
 }
 
-/* Hide on desktop */
+/* Hide camera switch button on desktop */
 @media (hover: hover) and (pointer: fine) {
     .camera-switch-btn {
         display: none;
@@ -289,9 +381,6 @@ body {
 }
 
 .settings-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     padding: 10px;
     background-color: var(--button-bg);
     color: var(--text-color);
@@ -399,11 +488,11 @@ body {
 .chat-history {
     position: absolute;
     top: 60px;
-    left: 20px;
-    right: 20px;
-    bottom: 120px;
+    left: 0;
+    right: 0;
+    bottom: 60px; /* Adjust bottom to make space for the button banner and input */
     background: rgba(0, 0, 0, 0.7);
-    border-radius: 10px;
+    border-radius: 0; /* Remove border-radius for full width */
     padding: 15px;
     overflow-y: auto;
     display: flex;
@@ -415,7 +504,7 @@ body {
 .chat-message {
     padding: 10px 15px;
     border-radius: 15px;
-    max-width: 80%;
+    max-width: 90%; /* Increase max-width for mobile */
     word-wrap: break-word;
     line-height: 1.4;
 }
@@ -424,14 +513,14 @@ body {
     background: #2c5282;
     color: white;
     align-self: flex-end;
-    margin-left: 20%;
+    margin-left: 10%; /* Adjust margin for mobile */
 }
 
 .model-message {
     background: #2d3748;
     color: white;
     align-self: flex-start;
-    margin-right: 20%;
+    margin-right: 10%; /* Adjust margin for mobile */
 }
 
 .model-message.streaming::after {
