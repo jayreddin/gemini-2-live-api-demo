@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3498db">
+    <meta name="msapplication-TileColor" content="#3498db">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Puter API Documentation</title>
+    
+    <!-- Apple touch icons - correctly placed in head -->
+    <link rel="apple-touch-icon" sizes="57x57" href="../icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="../icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="../icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="../icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="../icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="../icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="../icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="../icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-icon-180x180.png">
+    
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .api-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-container">
+        <h1>Puter API Documentation</h1>
+        <p>This page contains documentation for the Puter API.</p>
+        
+        <h2>Introduction</h2>
+        <p>The Puter API allows developers to integrate with Puter's cloud storage and computing services.</p>
+        
+        <h2>API Endpoints</h2>
+        <div id="api-content">
+            <!-- Content will be loaded here dynamically -->
+            Loading documentation...
+        </div>
+    </div>
+
+    <script>
+        // Load documentation content from the text file
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('puter_docs.txt');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const content = await response.text();
+                document.getElementById('api-content').innerHTML = marked(content);
+            } catch (error) {
+                console.error('Error loading documentation:', error);
+                document.getElementById('api-content').innerHTML = 
+                    '<p>Error loading documentation. Please try again later.</p>';
+            }
+        });
+    </script>
+    <!-- Include marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>

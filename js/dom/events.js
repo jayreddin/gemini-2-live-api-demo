@@ -117,11 +117,14 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
     };
 
 
-    // --- Button Event Listeners ---
-
-    // Disconnect handler
+    // --- Button Event Listeners ---    // Disconnect handler
     elements.disconnectBtn.addEventListener('click', async () => {
         try {
+            // Disconnect logic
+            if ('vibrate' in navigator) {
+                navigator.vibrate([50]);
+            }
+        
             // Dispose managers and cleanup interactions before disconnecting agent
             if (isCameraActive) {
                 cameraManager.dispose(); // Calls onClose which calls cleanupPopupInteraction
@@ -149,8 +152,7 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
     });
 
     // Connect handler
-    elements.connectBtn.addEventListener('click', async () => {
-        try {
+    elements.connectBtn.addEventListener('click', async () => {        try {
             await ensureAgentReady(agent);
         } catch (error) {
             console.error('Error connecting:', error);
@@ -161,19 +163,31 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
     elements.micBtn.addEventListener('click', async () => {
         try {
             await ensureAgentReady(agent);
-            // TODO: Verify agent.toggleMic() correctly manages internal state
-            // and potentially emits events to confirm state changes.
+            // Request microphone permission if not already granted
+            if (agent.audioRecorder && !agent.audioRecorder.stream) {
+                try {
+                    await agent.audioRecorder.start(() => {}); // Start with a dummy callback
+                    elements.micBtn.classList.add('permission-pending'); // Add permission pending class
+                } catch (permissionError) {
+                    console.error('Microphone permission denied:', permissionError);
+                    // Handle permission denied
+                    elements.micBtn.classList.remove('permission-pending');
+                    // Optionally, show a message to the user
+                    return;
+                }
+            }
+
             await agent.toggleMic();
-            isMicActive = !isMicActive; // Tentatively toggle state
-            elements.micBtn.classList.toggle('active', isMicActive); // Update class based on assumed state
-            elements.micBtn.setAttribute('aria-pressed', isMicActive); // Update ARIA
+            isMicActive = !isMicActive;
+            elements.micBtn.classList.toggle('active', isMicActive);
+            elements.micBtn.classList.remove('permission-pending'); // Remove pending class if active
+            elements.micBtn.setAttribute('aria-pressed', isMicActive);
             console.log(`Mic toggled. Assumed active: ${isMicActive}`);
         } catch (error) {
             console.error('Error toggling microphone:', error);
-            // Reset state on error
-            isMicActive = false;
-            elements.micBtn.classList.remove('active');
+            elements.micBtn.classList.remove('active', 'permission-pending');
             elements.micBtn.setAttribute('aria-pressed', 'false');
+            // Handle errors, e.g., device not available
         }
     });
 
@@ -284,8 +298,7 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
         }
     };
 
-    elements.sendBtn.addEventListener('click', sendMessage);
-    elements.messageInput.addEventListener('keypress', (event) => {
+    elements.sendBtn.addEventListener('click', sendMessage);    elements.messageInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             sendMessage();
@@ -293,7 +306,9 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
     });
 
     // Settings button click
-    elements.settingsBtn.addEventListener('click', () => settingsManager.show());    // Initial UI state
+    elements.settingsBtn.addEventListener('click', () => settingsManager.show());
+    
+    // Initial UI state
     showConnectButton(); // Assuming starts disconnected
 }
 

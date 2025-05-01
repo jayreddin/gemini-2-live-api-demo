@@ -7,7 +7,7 @@
     --accent-color: #4CAF50;
     --danger-color: #ff4444;
     --border-color: #555555; /* Added border color */
-    --focus-ring-color: rgba(76, 175, 80, 0.4); /* Adjusted focus ring */
+    --focus-ring-color: rgba(0, 0, 0, 0.4); /* Adjusted for better contrast */ /* Adjusted focus ring */
 
     /* Sizing */
     --touch-target-size: 44px;
@@ -15,6 +15,44 @@
     --padding-medium: 16px;
     --padding-large: 24px;
     --border-radius: 8px;
+/* System Theme Preference */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-color: #f0f0f0;
+    --surface-color: #fff;
+    --button-hover: #ddd;
+    --text-color: #000;
+    --text-secondary-color: #666;
+    --accent-color: #007bff;
+    --danger-color: #dc3545;
+    --border-color: #ddd;
+    --focus-ring-color: rgba(0, 123, 255, 0.4);
+  }
+}
+/* Dark Theme Variables (existing) */
+:root {
+  --bg-color: #1a1a1a;
+  --surface-color: #2d2d2d;
+  --button-hover: #3d3d3d;
+  --text-color: #ffffff;
+  --text-secondary-color: #aaaaaa;
+  --accent-color: #4CAF50;
+  --danger-color: #ff4444;
+  --border-color: #555555;
+  --focus-ring-color: rgba(0, 0, 0, 0.4); /* Adjusted for better contrast */
+}
+/* Light Theme Variables */
+:root[data-theme="light"] {
+  --bg-color: #f0f0f0;
+  --surface-color: #fff;
+  --button-hover: #ddd;
+  --text-color: #000;
+  --text-secondary-color: #666;
+  --accent-color: #007bff;
+  --danger-color: #dc3545;
+  --border-color: #ddd;
+  --focus-ring-color: rgba(0, 123, 255, 0.4);
+}
 }
 
 * {
@@ -261,22 +299,52 @@ body {
 
 /* --- Video Popups --- */
 .video-popup {
-    position: fixed; /* Use fixed positioning for popups */
-    bottom: var(--padding-medium); /* Initial position */
+    position: fixed;
+    bottom: var(--padding-medium);
     left: var(--padding-medium);
-    width: 250px; /* Default size */
+    width: 250px;
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    overflow: hidden; /* Changed from visible to hidden initially */
-    z-index: 100; /* Ensure popups are above other content */
+    overflow: hidden;
+    z-index: 100;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    display: none; /* Hidden by default */
-    flex-direction: column; /* Stack header and content */
-    touch-action: none; /* Prevent default touch actions for dragging/resizing */
-    resize: both; /* Allow resizing (may need JS enhancement) */
-    min-width: 150px; /* Minimum size */
+    display: none;
+    flex-direction: column;
+    touch-action: none;    resize: both;
+    min-width: 150px;
     min-height: 100px;
+    -webkit-user-select: none;
+    user-select: none; /* Prevent text selection during drag */
+    max-width: calc(100vw - 2 * var(--padding-medium)); /* Ensure not wider than viewport */
+    max-height: calc(100vh - 2 * var(--padding-medium)); /* Ensure not taller than viewport */
+}
+
+/* Mobile-specific video popup styles */
+@media (max-width: 767px) {
+    .video-popup {
+        width: calc(100vw - 2 * var(--padding-medium)); /* Full width minus padding */
+        height: auto; /* Let content determine height */
+        left: var(--padding-medium);
+        right: var(--padding-medium);
+        bottom: calc(var(--touch-target-size) * 2); /* Keep above input area */
+        transform: translateZ(0); /* Force hardware acceleration */
+    }
+
+    .popup-header {
+        padding: calc(var(--padding-small) + 2px) var(--padding-medium); /* Larger touch target */
+    }
+
+    .popup-close-btn {
+        padding: var(--padding-small); /* Larger touch target */
+        margin: calc(var(--padding-small) * -1); /* Offset larger padding */
+    }
+
+    .switch-camera-btn {
+        width: var(--touch-target-size);
+        height: var(--touch-target-size);
+        opacity: 0.8; /* Better visibility on mobile */
+    }
 }
 
 .video-popup.show {
@@ -325,11 +393,23 @@ body {
 
 .popup-content video {
     display: block;
-    max-width: 100%; /* Ensure video scales down */
-    max-height: 100%; /* Ensure video scales down */
-    width: auto; /* Maintain aspect ratio */
-    height: auto; /* Maintain aspect ratio */
-    object-fit: contain; /* Fit video within the container */
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%; /* Always fill width on mobile */
+    height: 100%; /* Always fill height */
+    object-fit: contain;
+    touch-action: none; /* Prevent default touch actions */
+}
+
+/* Camera-specific video styles */
+#cameraPopupVideo {
+    object-fit: cover; /* Cover for camera preview */
+    transform: scaleX(-1); /* Mirror front camera preview */
+}
+
+/* Screen-specific video styles */
+#screenPopupVideo {
+    object-fit: contain; /* Maintain aspect ratio for screen sharing */
 }
 
 #cameraPopup .popup-content video {

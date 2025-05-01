@@ -1,6 +1,8 @@
 /**
  * Manages camera access, capture, and image processing
  */
+import { makeDraggable, makeResizable } from '../utils/utils.js';
+
 export class CameraManager {
     /**
      * @param {Object} config
@@ -168,9 +170,9 @@ export class CameraManager {
 
 
     /**
-     * Initialize camera stream, popup, and canvas
-     * @returns {Promise<void>}
-     */
+ * Initialize camera stream, popup, and canvas
+ * @returns {Promise<void>}
+ */
     async initialize() {
         if (this.isInitialized || !this.popupElement || !this.videoElement) return;
 
@@ -178,45 +180,43 @@ export class CameraManager {
             // Determine initial facing mode
             let initialFacingMode = null;
             if (/Mobi|Android/i.test(navigator.userAgent)) {
-                 initialFacingMode = localStorage.getItem('facingMode') || 'user'; // Load preference or default to front
-                 this.config.facingMode = initialFacingMode;
+                initialFacingMode = localStorage.getItem('facingMode') || 'user';
+                this.config.facingMode = initialFacingMode;
             }
-
-            // Request camera access and start stream
+ 
             await this.initializeStream(initialFacingMode);
-
+ 
             // Setup popup elements and listeners
             if (this.switchButton) {
-                this.switchButton.onclick = () => this.switchCamera(); // Use onclick for simplicity or manage listeners
-                await this._updateSwitchButtonVisibility(); // Check if switch button should be visible
+                this.switchButton.onclick = () => this.switchCamera();
+                await this._updateSwitchButtonVisibility();
             }
             if (this.closeButton) {
-                 this.closeButton.onclick = () => this.dispose(); // Close button triggers dispose
+                this.closeButton.onclick = () => this.dispose();
             }
-
-            // Add listener for click-outside dismissal (implementation might be external)
-            // this._setupClickOutsideListener();
-
-            // Add draggable/resizable listeners (implementation might be external)
-            // this._setupDraggableResizable();
-
-            this.showPreview(); // Show the popup
-
-            // Get the actual video dimensions
+ 
+            this.showPreview();
+ 
+            // Get video dimensions
             const videoWidth = this.videoElement.videoWidth;
             const videoHeight = this.videoElement.videoHeight;
             this.aspectRatio = videoHeight / videoWidth;
-
-            // Calculate canvas size maintaining aspect ratio
+ 
+            // Create canvas
             const canvasWidth = this.config.width;
             const canvasHeight = Math.round(this.config.width * this.aspectRatio);
-
-            // Create canvas for image processing
             this.canvas = document.createElement('canvas');
             this.canvas.width = canvasWidth;
             this.canvas.height = canvasHeight;
             this.ctx = this.canvas.getContext('2d');
-
+ 
+            // Make popup draggable and resizable
+            const header = this.popupElement.querySelector('.popup-header');
+            if (header) {
+                this.dragCleanup = makeDraggable(this.popupElement, header);
+                this.resizeCleanup = makeResizable(this.popupElement);
+            }
+ 
             this.isInitialized = true;
         } catch (error) {
             throw new Error(`Failed to initialize camera: ${error.message}`);
@@ -256,52 +256,49 @@ export class CameraManager {
 
         // Convert to base64 JPEG with specified quality
         return this.canvas.toDataURL('image/jpeg', this.config.quality).split(',')[1];
-    }
-
-    /**
+    }    /**
      * Stop camera stream and cleanup resources
-     */
-    /**
-     * Stop camera stream and cleanup resources, hiding the popup.
      */
     dispose() {
         console.log("Disposing CameraManager...");
-        if (!this.isInitialized && !this.stream) return; // Avoid disposing multiple times or if not initialized
-
+        if (!this.isInitialized && !this.stream) return;
+ 
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
-            console.log("Camera stream stopped.");
         }
-
+ 
         if (this.videoElement) {
             this.videoElement.srcObject = null;
-            this.videoElement.pause(); // Explicitly pause
-            this.videoElement.removeAttribute('src'); // Remove src attribute
-            // Note: We don't remove the videoElement itself as it's part of the static HTML popup
+            this.videoElement.pause();
+            this.videoElement.removeAttribute('src');
         }
-
-        // Remove listeners if they were added directly
+ 
         if (this.switchButton) {
             this.switchButton.onclick = null;
-            this.switchButton.style.display = 'none'; // Hide it
+            this.switchButton.style.display = 'none';
         }
         if (this.closeButton) {
             this.closeButton.onclick = null;
         }
-
-        // Clean up draggable/resizable listeners if added
-        // this._cleanupDraggableResizable();
-        // this._cleanupClickOutsideListener();
-
-        this.hidePreview(); // Hide the popup
-
+ 
+        // Clean up draggable/resizable listeners
+        if (this.dragCleanup) {
+            this.dragCleanup();
+            this.dragCleanup = null;
+        }
+        if (this.resizeCleanup) {
+            this.resizeCleanup();
+            this.resizeCleanup = null;
+        }
+ 
+        this.hidePreview();
+ 
         this.canvas = null;
         this.ctx = null;
         this.isInitialized = false;
         this.aspectRatio = null;
-
-        // Trigger the close callback if it exists
+ 
         if (this.onCloseCallback) {
             try {
                 this.onCloseCallback();

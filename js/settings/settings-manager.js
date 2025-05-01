@@ -26,7 +26,10 @@ class SettingsManager {
             overlay: this.overlay,
             apiKeyInput: this.dialog.querySelector('#apiKey'),
             deepgramApiKeyInput: this.dialog.querySelector('#deepgramApiKey'),
+            puterApiKeyInput: this.dialog.querySelector('#puterApiKey'),
             voiceSelect: this.dialog.querySelector('#voice'),
+            themeSelect: this.dialog.querySelector('#themeToggle'),
+            providerSelect: this.dialog.querySelector('#providerSelect'),
             sampleRateInput: this.dialog.querySelector('#sampleRate'),
             sampleRateValue: this.dialog.querySelector('#sampleRateValue'),
             systemInstructionsToggle: this.dialog.querySelector('#systemInstructionsToggle'),
@@ -103,13 +106,59 @@ class SettingsManager {
         inputElements.forEach(elementName => {
             this.elements[elementName].addEventListener('input', () => this.updateDisplayValues());
         });
+        // Provider switch: dynamic Puter.com script management
+        this.elements.providerSelect.addEventListener('change', async () => {
+            await this.handleProviderSwitch();
+        });
+    }
+
+    async handleProviderSwitch() {
+        const provider = this.elements.providerSelect.value;
+        // Show loading state (simple: disable save button)
+        this.elements.saveBtn.disabled = true;
+        this.elements.saveBtn.textContent = 'Switching...';
+
+        try {
+            if (provider === 'puter') {
+                await this.loadPuterScript();
+            } else {
+                this.unloadPuterScript();
+            }
+        } catch (err) {
+            alert('Failed to switch provider: ' + err.message);
+        } finally {
+            this.elements.saveBtn.disabled = false;
+            this.elements.saveBtn.textContent = 'Save Settings';
+        }
+    }
+
+    loadPuterScript() {
+        return new Promise((resolve, reject) => {
+            if (document.getElementById('puter-com-script')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.id = 'puter-com-script';
+            script.src = 'https://js.puter.com/v2/';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Failed to load Puter.com script'));
+            document.body.appendChild(script);
+        });
+    }
+
+    unloadPuterScript() {
+        const script = document.getElementById('puter-com-script');
+        if (script) script.remove();
     }
 
     loadSettings() {
         // Load values from localStorage
         this.elements.apiKeyInput.value = localStorage.getItem('apiKey') || '';
         this.elements.deepgramApiKeyInput.value = localStorage.getItem('deepgramApiKey') || '';
+        this.elements.puterApiKeyInput.value = localStorage.getItem('puterApiKey') || '';
         this.elements.voiceSelect.value = localStorage.getItem('voiceName') || 'Aoede';
+        this.elements.providerSelect.value = localStorage.getItem('provider') || 'gemini';
         this.elements.sampleRateInput.value = localStorage.getItem('sampleRate') || '27000';
         this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || 'You are a helpful assistant';
         this.elements.temperatureInput.value = localStorage.getItem('temperature') || '1.8';
@@ -128,12 +177,20 @@ class SettingsManager {
         this.elements.civicInput.value = localStorage.getItem('civicIntegrityThreshold') || '3';
 
         this.updateDisplayValues();
+        // Ensure correct script is loaded/unloaded on settings load
+        if (this.elements.providerSelect.value === 'puter') {
+            this.loadPuterScript();
+        } else {
+            this.unloadPuterScript();
+        }
     }
 
     saveSettings() {
         localStorage.setItem('apiKey', this.elements.apiKeyInput.value);
         localStorage.setItem('deepgramApiKey', this.elements.deepgramApiKeyInput.value);
+        localStorage.setItem('puterApiKey', this.elements.puterApiKeyInput.value);
         localStorage.setItem('voiceName', this.elements.voiceSelect.value);
+        localStorage.setItem('provider', this.elements.providerSelect.value);
         localStorage.setItem('sampleRate', this.elements.sampleRateInput.value);
         localStorage.setItem('systemInstructions', this.elements.systemInstructionsInput.value);
         localStorage.setItem('temperature', this.elements.temperatureInput.value);

@@ -1,13 +1,31 @@
-# Context Summary: index.html
+# Frontend Structure (index.html, css/styles.css)
 
-This file is the main HTML entry point for the Gemini Live application. It defines the application's UI layout, including:
+## Purpose and Responsibilities
+Defines the application's UI layout and visual style. Provides containers for chat, media previews, toolbars, and settings. CSS handles desktop-oriented layout, spacing, and component visibility.
 
-- A container with buttons for disconnect, connect, settings, camera, screen, and microphone controls.
-- A chat history display area.
-- A canvas for audio visualization.
-- Preview areas for camera and screen sharing.
-- A text input field and send button for chat messages.
+## Key Elements and Roles
+- **HTML**: Main containers for chat, media (camera/screen), toolbars, and settings.
+- **CSS**: Desktop-first grid/flex layouts, fixed widths, hover/focus states, and font sizing.
 
-The file links to the main stylesheet (`css/styles.css`) and loads the main JavaScript module (`js/script.js`). All interactive elements are identified by unique IDs and classes for easy access by scripts and styles.
+## Dependencies and Relationships
+- Relies on JavaScript for dynamic UI updates and event handling.
+- CSS classes are tightly coupled to HTML structure and JS logic.
 
-This file serves as the foundation for the application's frontend, with dynamic behavior handled by the linked JavaScript.
+## Desktop-Specific Implementations
+- Fixed or large minimum widths.
+- Hover/focus effects for mouse interaction.
+- Scrollbars and resizable panels.
+- Toolbar and settings panels positioned for desktop screens.
+
+## Areas Needing Mobile Adaptation
+- Responsive layout (flex/grid to column, stacking, fluid widths).
+- Touch-friendly controls (larger buttons, no hover).
+- Adaptive font sizes and spacing.
+- Hide/show panels for small screens.
+- Mobile navigation patterns (drawers, bottom nav).
+
+## Potential Challenges
+- Ensuring all UI elements remain accessible and usable on small screens.
+- Replacing hover/focus with touch equivalents.
+- Managing dynamic resizing and orientation changes.
+- Performance on lower-powered mobile devices.

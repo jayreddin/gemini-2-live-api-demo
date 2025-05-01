@@ -1,13 +1,32 @@
-# Context Summary: js/main/agent.js
+# Core Application Logic (GeminiAgent, script.js)
 
-This file defines the `GeminiAgent` class, the core orchestrator for the Gemini 2 Live API frontend. Key responsibilities include:
+## Purpose and Responsibilities
+Acts as the orchestrator for the application, managing media (camera, screen), audio, chat, tool calls, and settings. Handles initialization, event listeners, and communication between UI and backend services.
 
-- **Component Integration:** Manages audio recording/streaming, camera, screen sharing, and visualization by integrating with specialized modules.
-- **WebSocket Communication:** Handles connection to the backend via `GeminiWebsocketClient`, sending/receiving messages, audio, and images.
-- **Transcription:** Integrates Deepgram for real-time speech-to-text for both model and user audio, with keep-alive and event handling.
-- **Tool Management:** Connects to a `ToolManager` for dynamic tool invocation and function call handling.
-- **Event System:** Implements a custom event emitter for UI and logic integration (e.g., transcription, interruptions, turn completion).
-- **Resource Management:** Provides methods for starting/stopping camera, screen, audio, and for graceful disconnect/cleanup.
-- **Initialization:** Handles setup of all components, including audio context, visualizer, and transcribers, based on configuration and API keys.
+## Key Functions and Roles
+- **GeminiAgent class**: Central controller for all subsystems.
+  - Manages CameraManager and ScreenManager instances.
+  - Handles event listeners for user actions and system events.
+  - Connects to backend services and manages tool calls.
+  - Controls audio recording, speech transcription, and chat flow.
+- **script.js**: Entry point, instantiates GeminiAgent and binds it to the UI.
 
-This class is central to the application's runtime, coordinating all real-time media, communication, and extensibility features.
+## Dependencies and Relationships
+- Imports and manages instances of CameraManager, ScreenManager, AudioRecorder, AudioStreamer, ChatManager, ToolManager, and SettingsManager.
+- Relies on DOM elements for UI updates and event triggers.
+
+## Desktop-Specific Implementations
+- Assumes persistent screen/camera availability.
+- Uses mouse-based event listeners (click, hover).
+- May expect larger screen real estate for simultaneous panels.
+
+## Areas Needing Mobile Adaptation
+- Replace mouse events with touch events (tap, swipe).
+- Adapt event listeners for mobile gestures.
+- Manage permissions and device availability for mobile hardware.
+- Optimize for limited screen space and multitasking constraints.
+
+## Potential Challenges
+- Handling mobile permission prompts and hardware variability.
+- Ensuring smooth transitions between media modes (camera, screen, audio) on mobile.
+- Maintaining performance and responsiveness on lower-powered devices.

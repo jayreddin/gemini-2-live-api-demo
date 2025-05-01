@@ -1,38 +1,53 @@
-# Puter.com API Docs Summary
+<!\[CDATA[
+## Puter.js API Summary
 
-**Overview:**  
-Puter.js provides serverless cloud, AI, storage, authentication, and utility APIs for browser-based JavaScript. All APIs are accessed via the `puter` namespace.
+Puter.js is a JavaScript SDK that provides serverless authentication, cloud storage, and AI services directly in the browser. It allows developers to build applications without backend code or configuration.
 
-## Key API Categories
+### Core Features
 
-- **AI:** `puter.ai.chat()`, `puter.ai.txt2img()`, `puter.ai.img2txt()`, `puter.ai.txt2speech()`
-- **Cloud Storage:** `puter.fs.write()`, `puter.fs.read()`, `puter.fs.mkdir()`, etc.
-- **Key-Value Store:** `puter.kv.set()`, `puter.kv.get()`, etc.
-- **Hosting:** `puter.hosting.create()`, `puter.hosting.list()`, etc.
-- **Auth:** `puter.auth.signIn()`, `puter.auth.signOut()`, etc.
-- **Permissions:** Grant/revoke user, group, app, and origin permissions.
-- **Threads, Apps, UI, Drivers, Utilities, Objects:** Additional APIs for app management, UI, integrations, and system objects.
+*   **AI:** Access to AI models like GPT-4o, Claude 3.7 Sonnet, and DALL·E 3 for tasks like chat, image generation, and text-to-speech.
+*   **Cloud Storage:** Serverless file storage with functions for writing, reading, creating directories, renaming, copying, moving, and deleting files.
+*   **Key-Value Store:** A NoSQL database for storing user preferences and application data.
+*   **Hosting:** Ability to publish static websites directly from the browser.
+*   **Authentication:** User authentication and authorization.
+*   **Permissions:** Fine-grained control over user and app permissions.
+*   **Threads:** Create, get, edit, delete, list, and subscribe to threads.
+*   **Apps:** Create, list, delete, update, and get apps.
+*   **UI:** A set of UI components for building user interfaces.
+*   **Drivers:** Access to various drivers for external services.
+*   **Utilities:** Utility functions for common tasks.
 
-## AI API Details
+### Key Concepts
 
-- **chat(prompt, options):**  
-  - Text and vision chat/completion with support for multiple models (OpenAI, Google Gemini, Claude, etc.), streaming, and function calling.
-  - Supports both simple prompts and structured message arrays for chatbot context.
-- **txt2img(prompt):**  
-  - Generates images from text prompts using AI models (e.g., DALL·E 3).
-- **img2txt, txt2speech:**  
-  - Image captioning and text-to-speech.
+*   **Services:** Puter services provide specific functionalities, such as AI, cloud storage, and authentication.
+*   **Modules:** Custom Puter modules can be created to extend the functionality of the platform.
+*   **Extensions:** Puter extensions allow developers to add custom endpoints and functionality to the API.
+*   **Drivers:** Drivers provide access to external services and APIs.
+*   **Context:** Context objects are used to maintain contextual data in both Node.js and browser environments.
 
-## Usage Example
+### API Endpoints
 
-```javascript
-// Chat with AI
-puter.ai.chat("What is life?").then(console.log);
+*   `/share`: Shares files and apps with other users.
+*   `/sharelink/apply`: Applies a sharelink to the current user.
+*   `/sharelink/check`: Checks the validity of a sharelink.
+*   `/group/add-users`: Adds users to a group.
 
-// Generate an image
-puter.ai.txt2img("A picture of a cat.").then(img => document.body.appendChild(img));
-```
+### Authentication
 
-**Note:**  
-- All APIs are promise-based and run in the browser.
-- For full details, see the complete docs file.
+Puter.js provides functions for signing in, signing out, and getting user information.
+
+### Code Examples
+
+The documentation includes code examples for various tasks, such as:
+
+*   Writing a file to the cloud
+*   Reading a file from the cloud
+*   Saving user preferences in the cloud Key-Value Store
+*   Chatting with GPT-4o mini
+*   Generating an image with DALL·E 3
+*   Publishing a static website
+*   Authenticating a user
+*   Using tool functions with AI
+*   Responding to tool use with Claude AI in streaming mode
+
+]]>

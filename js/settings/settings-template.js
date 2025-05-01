@@ -6,6 +6,18 @@ export const settingsTemplate = `
 </div>
 
 <div class="settings-group">
+    <label for="puterApiKey">Puter.com API Key</label>
+    <input type="password" id="puterApiKey" placeholder="Enter your Puter.com API key">
+</div>
+<div class="settings-group">
+    <label for="providerSelect">AI Provider</label>
+    <select id="providerSelect">
+        <option value="gemini">Gemini</option>
+        <option value="puter">Puter.com</option>
+    </select>
+</div>
+
+<div class="settings-group">
     <label for="deepgramApiKey">Deepgram API Key (Optional)</label>
     <input type="password" id="deepgramApiKey" placeholder="Enter your Deepgram API key">
 </div>
@@ -97,9 +109,18 @@ export const settingsTemplate = `
         <div class="settings-group">
             <label for="civicIntegrityThreshold">Civic Integrity (0-3)</label>
             <input type="range" id="civicIntegrityThreshold" min="0" max="3" step="1">
+<div class="settings-group">
+    <label for="themeToggle">Theme</label>
+    <select id="themeToggle">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+</div>
             <span id="civicValue"></span>
-        </div>    </div>
+        </div>
+    </div>
 </div>
 
 <button id="settingsSaveBtn" class="settings-save-btn">Save Settings</button>
-</form>`;
+</form>
+`;
