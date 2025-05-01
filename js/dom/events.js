@@ -293,11 +293,8 @@ export function setupEventListeners(agent, cameraManager, screenManager) {
     });
 
     // Settings button click
-    elements.settingsBtn.addEventListener('click', () => settingsManager.show());
-
-    // Initial UI state
+    elements.settingsBtn.addEventListener('click', () => settingsManager.show());    // Initial UI state
     showConnectButton(); // Assuming starts disconnected
 }
 
-// Initialize settings (keep this if settingsManager needs early init)
-settingsManager.initialize();
+// SettingsManager is initialized in its constructor, no need to call initialize()

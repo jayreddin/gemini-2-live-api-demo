@@ -1,4 +1,5 @@
 export const settingsTemplate = `
+<form id="settingsForm" onsubmit="return false;">
 <div class="settings-group">
     <label for="apiKey">Gemini API Key</label>
     <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
@@ -97,8 +98,8 @@ export const settingsTemplate = `
             <label for="civicIntegrityThreshold">Civic Integrity (0-3)</label>
             <input type="range" id="civicIntegrityThreshold" min="0" max="3" step="1">
             <span id="civicValue"></span>
-        </div>
-    </div>
+        </div>    </div>
 </div>
 
-<button id="settingsSaveBtn" class="settings-save-btn">Save Settings</button>`; 
+<button id="settingsSaveBtn" class="settings-save-btn">Save Settings</button>
+</form>`;
