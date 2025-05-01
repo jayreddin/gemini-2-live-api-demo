@@ -131,14 +131,25 @@ export class CameraManager {
                 previewContainer = document.createElement('div');
                 previewContainer.id = 'camera-preview';
                 previewContainer.className = 'camera-preview';
-                // Append to body or a more specific container if available
                 document.body.appendChild(previewContainer);
             }
             previewContainer.innerHTML = ''; // Clear previous content if any
+
+            // Add drag handle
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'preview-drag-handle';
+            dragHandle.style.cssText = 'cursor: grab; padding: 5px; background: rgba(0,0,0,0.5); color: white; text-align: center;';
+            dragHandle.textContent = '⋮⋮'; // Drag handle icon
+            previewContainer.appendChild(dragHandle);
+
+            // Add video element
             previewContainer.appendChild(this.videoElement);
             this.previewContainer = previewContainer;
             this._createSwitchButton(); // Add switch button
             this.showPreview(); // Show preview when initialized
+
+            // Initialize drag functionality
+            this._initializeDrag(dragHandle);
 
             await this.videoElement.play();
 
@@ -227,5 +238,72 @@ export class CameraManager {
         this.ctx = null;
         this.isInitialized = false;
         this.aspectRatio = null;
+    }
+
+    /**
+     * Initialize drag functionality for the preview container
+     * @param {HTMLElement} handle - The element to use as drag handle
+     * @private
+     */
+    _initializeDrag(handle) {
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        const dragStart = (e) => {
+            if (e.type === "touchstart") {
+                initialX = e.touches[0].clientX - xOffset;
+                initialY = e.touches[0].clientY - yOffset;
+            } else {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+            }
+
+            if (e.target === handle) {
+                isDragging = true;
+                handle.style.cursor = 'grabbing';
+            }
+        };
+
+        const dragEnd = () => {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+            handle.style.cursor = 'grab';
+        };
+
+        const drag = (e) => {
+            if (isDragging) {
+                e.preventDefault();
+
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX - initialX;
+                    currentY = e.touches[0].clientY - initialY;
+                } else {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                }
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                this.previewContainer.style.transform =
+                    `translate3d(${currentX}px, ${currentY}px, 0)`;
+            }
+        };
+
+        // Touch events
+        handle.addEventListener("touchstart", dragStart, { passive: false });
+        document.addEventListener("touchend", dragEnd);
+        document.addEventListener("touchmove", drag, { passive: false });
+
+        // Mouse events
+        handle.addEventListener("mousedown", dragStart);
+        document.addEventListener("mouseup", dragEnd);
+        document.addEventListener("mousemove", drag);
     }
 }
